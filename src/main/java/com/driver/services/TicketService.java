@@ -8,6 +8,7 @@ import com.driver.model.Train;
 import com.driver.repository.PassengerRepository;
 import com.driver.repository.TicketRepository;
 import com.driver.repository.TrainRepository;
+import com.driver.transformer.TicketTransformer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,9 @@ public class TicketService {
     @Autowired
     PassengerRepository passengerRepository;
 
+    @Autowired
+    TrainService trainService;
+
 
     public Integer bookTicket(BookTicketEntryDto bookTicketEntryDto)throws Exception{
 
@@ -41,8 +45,23 @@ public class TicketService {
         //Save the bookedTickets in the train Object
         //Also in the passenger Entity change the attribute bookedTickets by using the attribute bookingPersonId.
        //And the end return the ticketId that has come from db
+        Train train = trainRepository.findById(bookTicketEntryDto.getTrainId()).get();
 
-       return null;
+        if(!trainService.goesFromStation(bookTicketEntryDto.getFromStation(), train) || !trainService.goesFromStation(bookTicketEntryDto.getToStation(), train)){
+            throw new Exception("Invalid stations");
+        }
+        Ticket ticket = TicketTransformer.dtoToTicket(bookTicketEntryDto);
+        List<Passenger> passengers = new ArrayList<>();
+        for(Integer id: bookTicketEntryDto.getPassengerIds()){
+            passengers.add(passengerRepository.findById(id).get());
+        }
+
+        ticket.setTrain(trainRepository.findById(bookTicketEntryDto.getTrainId()).get());
+        ticket.setPassengersList(passengers);
+        Ticket savedTicket = ticketRepository.save(ticket);
+        train.getBookedTickets().add(savedTicket);
+        trainRepository.save(train);
+       return savedTicket.getTicketId();
 
     }
 }
