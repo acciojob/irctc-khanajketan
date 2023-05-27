@@ -48,7 +48,7 @@ public class TicketService {
         Train train = trainRepository.findById(bookTicketEntryDto.getTrainId()).get();
 
         if(!trainService.goesFromStation(bookTicketEntryDto.getFromStation(), train) || !trainService.goesFromStation(bookTicketEntryDto.getToStation(), train)){
-            throw new Exception("Invalid stations");
+            return null;
         }
         Ticket ticket = TicketTransformer.dtoToTicket(bookTicketEntryDto);
         List<Passenger> passengers = new ArrayList<>();
